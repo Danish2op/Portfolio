@@ -42,3 +42,29 @@ The application will use a "Scene-Based Context Injection" approach instead of a
 - **Auth:** Protected by Firebase Authentication (Email/Password).
 - **Functionality:** A React-based form interface directly reading and writing to the `portfolio_knowledge` Firestore collection.
 - **Real-Time Updates:** Saving changes in the Admin Portal updates the Firestore documents, ensuring the AI Assistant instantly has the latest context without requiring a site rebuild.
+
+## 6. Scene Visuals & World Layout
+To ensure error-free rendering, the 3D world must follow strict visual and layout guidelines:
+
+- **The Open World Hub:** A central outdoor plaza or stylized floating island. Bright, welcoming daylight.
+  - *Assets:* Simple ground plane, stylized trees, and pathways leading to the 4 main buildings.
+- **Tech-Dorm Building:** 
+  - *Visuals:* Cyberpunk or neon-lit dorm room, dark mode aesthetic.
+  - *Props:* A desk, glowing monitors showing code, a server rack. The NPC Danish sits at the desk typing.
+- **School & College Building:**
+  - *Visuals:* A clean, academic lecture hall or library. Soft, warm lighting.
+  - *Props:* Bookshelves, a whiteboard (showing EV intrusion detection diagrams), and a badminton racket leaning on a desk.
+- **Experience Row (3 Buildings):**
+  - *Visuals:* A sleek, modern corporate street with 3 glass-front office buildings (LivPal, Tel-Aviv Uni, TFU).
+  - *Props:* Corporate logos/signs on the buildings, stock market charts visible through the TFU window.
+- **Music Studio:**
+  - *Visuals:* A high-end soundproof recording studio. Warm, moody spotlights.
+  - *Props:* Sound-absorbing wall panels, microphones, and an NPC Danish playing a bansuri (flute).
+
+## 7. UI/UX Layout
+- **3D Canvas:** Takes up 100% of the viewport width and height (`100vw`, `100vh`).
+- **AI Chat Interface:** 
+  - An absolute-positioned, glassmorphism-styled floating panel on the bottom-right of the screen.
+  - Features an input box, a scrolling message history, and a header indicating the current context (e.g., "AI Assistant - Tech Dorm").
+- **Movement Controls Help:** A subtle, semi-transparent overlay in the bottom-left showing "WASD to move, Mouse to look".
+- **Admin Dashboard:** A full-screen standard 2D React layout (opaque, hiding the 3D canvas) with a sidebar for selecting the Firestore document to edit, and a main panel with form inputs.
