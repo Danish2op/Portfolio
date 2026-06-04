@@ -1,0 +1,15 @@
+node_modules/
+dist/
+.DS_Store
+.env
+.env.*
+.vercel/
+*.tsbuildinfo
+
+# Agent metadata
+.agent/
+.agents/
+.codex-artifacts/
+
+# Nested subprojects
+resume-service/
