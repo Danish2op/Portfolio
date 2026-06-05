@@ -1,5 +1,5 @@
 import { Canvas, useFrame, useThree } from '@react-three/fiber';
-import { Html, Text, useTexture } from '@react-three/drei';
+import { Html, Text, useTexture, Billboard, Plane } from '@react-three/drei';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   Euler,
@@ -2071,10 +2071,11 @@ function CorridorDecorSet({ segmentStartZ }: { segmentStartZ: number }) {
           rysunekTex={rysunekTex}
         />
         {/* Tabletop plant */}
-        <mesh position={[0.4, 1.28, 0]}>
-          <planeGeometry args={[0.67, 0.4]} />
-          <meshBasicMaterial map={duckTex} transparent alphaTest={0.01} depthWrite={false} side={2} />
-        </mesh>
+        <Billboard position={[0.4, 1.28, 0]}>
+          <Plane args={[0.67, 0.4]}>
+            <meshBasicMaterial map={duckTex} transparent alphaTest={0.01} depthWrite={false} side={2} />
+          </Plane>
+        </Billboard>
       </group>
 
       {/* Pedestal / Box */}
@@ -2094,13 +2095,13 @@ function CorridorDecorSet({ segmentStartZ }: { segmentStartZ: number }) {
       </group>
 
       {/* Floor plant */}
-      <mesh
-        position={[wallX - 0.25, floorY + 0.55, segmentStartZ - 20]}
-        rotation={[0, -Math.PI / 2, 0]}
+      <Billboard
+        position={[wallX - 0.6, floorY + 0.7, segmentStartZ - 20]}
       >
-        <planeGeometry args={[1.83, 1.1]} />
-        <meshBasicMaterial map={duckTex} transparent alphaTest={0.01} depthWrite={false} side={2} />
-      </mesh>
+        <Plane args={[2.34, 1.4]}>
+          <meshBasicMaterial map={duckTex} transparent alphaTest={0.01} depthWrite={false} side={2} />
+        </Plane>
+      </Billboard>
     </group>
   );
 }

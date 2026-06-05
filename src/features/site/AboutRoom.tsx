@@ -199,51 +199,90 @@ function generateSketchBalloonPaintedTexture(): CanvasTexture {
 // Paper plane geometry (a folded paper airplane shape)
 function createPaperPlaneGeometry(): BufferGeometry {
   const geo = new BufferGeometry();
+  
+  // 6 vertices of a folded 3D paper airplane:
+  // Nose: [0, 0, -0.5]
+  // Left Wing Tip: [-0.4, 0.05, 0.25]
+  // Left Fold: [-0.04, -0.02, 0.22]
+  // Crease: [0, -0.09, 0.24]
+  // Right Fold: [0.04, -0.02, 0.22]
+  // Right Wing Tip: [0.4, 0.05, 0.25]
+  
   const vertices = new Float32Array([
-    // Nose
+    // Left Wing (0, 1, 2)
     0, 0, -0.5,
-    // Left wing tip
-    -0.35, 0.02, 0.25,
-    // Left fuselage
-    0, -0.04, 0.2,
-    // Right fuselage
-    0, -0.04, 0.2,
-    // Right wing tip
-    0.35, 0.02, 0.25,
-    // Nose (shared)
+    -0.4, 0.05, 0.25,
+    -0.04, -0.02, 0.22,
+
+    // Right Wing (3, 4, 5)
     0, 0, -0.5,
-    // Tail fin (top)
-    0, 0.12, 0.25,
-    // Nose (shared)
+    0.04, -0.02, 0.22,
+    0.4, 0.05, 0.25,
+
+    // Left Fuselage (6, 7, 8)
     0, 0, -0.5,
-    // Left fuselage
-    0, -0.04, 0.2,
+    -0.04, -0.02, 0.22,
+    0, -0.09, 0.24,
+
+    // Right Fuselage (9, 10, 11)
+    0, 0, -0.5,
+    0, -0.09, 0.24,
+    0.04, -0.02, 0.22,
   ]);
 
   const indices = [
-    0, 1, 2, // left wing
-    3, 4, 5, // right wing
-    6, 7, 8, // tail fin
+    0, 1, 2,     // Left wing
+    3, 4, 5,     // Right wing
+    6, 7, 8,     // Left fuselage
+    9, 10, 11,   // Right fuselage
   ];
 
   geo.setAttribute('position', new Float32BufferAttribute(vertices, 3));
   geo.setIndex(indices);
   geo.computeVertexNormals();
 
-  // Simple UV mapping for texture
   const uvs = new Float32Array([
-    0.5, 1.0,
-    0.0, 0.0,
-    0.5, 0.0,
-    0.5, 0.0,
-    1.0, 0.0,
-    0.5, 1.0,
-    0.5, 0.5,
-    0.5, 1.0,
-    0.5, 0.0,
+    0.5, 1.0, 0.0, 0.0, 0.45, 0.0, // Left wing
+    0.5, 1.0, 0.55, 0.0, 1.0, 0.0, // Right wing
+    0.5, 1.0, 0.45, 0.0, 0.5, 0.0,  // Left fuselage
+    0.5, 1.0, 0.5, 0.0, 0.55, 0.0,  // Right fuselage
   ]);
   geo.setAttribute('uv', new Float32BufferAttribute(uvs, 2));
 
+  return geo;
+}
+
+// Paper plane sketch ink outline geometry
+function createPaperPlaneOutlineGeometry(): BufferGeometry {
+  const geo = new BufferGeometry();
+  
+  const nose = [0, 0, -0.5];
+  const leftWingTip = [-0.4, 0.05, 0.25];
+  const leftFold = [-0.04, -0.02, 0.22];
+  const crease = [0, -0.09, 0.24];
+  const rightFold = [0.04, -0.02, 0.22];
+  const rightWingTip = [0.4, 0.05, 0.25];
+
+  const vertices = new Float32Array([
+    // Left Wing Outer
+    ...nose, ...leftWingTip,
+    ...leftWingTip, ...leftFold,
+    
+    // Right Wing Outer
+    ...nose, ...rightWingTip,
+    ...rightWingTip, ...rightFold,
+    
+    // Folds
+    ...nose, ...leftFold,
+    ...nose, ...rightFold,
+    ...nose, ...crease,
+    
+    // Back edges
+    ...leftFold, ...crease,
+    ...crease, ...rightFold,
+  ]);
+
+  geo.setAttribute('position', new Float32BufferAttribute(vertices, 3));
   return geo;
 }
 
@@ -331,16 +370,19 @@ function SkyChunk({
     const result = [];
     for (let i = 0; i < count; i++) {
       const seed = chunkIndex * 137 + i;
-      const x = (hashRandom(seed) - 0.5) * 36;
-      const y = (hashRandom(seed + 1) - 0.5) * 16 + 2;
+      let x = (hashRandom(seed) - 0.5) * 44;
+      if (Math.abs(x) < 3.5) {
+        x += Math.sign(x || 1) * 4.0;
+      }
+      const y = (hashRandom(seed + 1) - 0.5) * 14 + 1;
       const z =
         -(chunkIndex * aboutRoomConfig.chunkSize) -
         hashRandom(seed + 2) * aboutRoomConfig.chunkSize;
       const texIdx = Math.floor(hashRandom(seed + 3) * cloudTextures.length);
-      const scale = 4.5 + hashRandom(seed + 4) * 6;
+      const scale = 2.0 + hashRandom(seed + 4) * 2.8;
       const driftSpeed = 0.08 + hashRandom(seed + 5) * 0.25;
       const phase = hashRandom(seed + 6) * Math.PI * 2;
-      const opacity = 0.35 + hashRandom(seed + 7) * 0.45;
+      const opacity = 0.45 + hashRandom(seed + 7) * 0.45;
       result.push({ x, y, z, texIdx, scale, driftSpeed, phase, opacity });
     }
     return result;
@@ -365,7 +407,7 @@ function SkyChunk({
       const relZ = c.z + scrollProgressRef.current;
       if (relZ > -10 && relZ < 4) {
         const transition = MathUtils.smoothstep(relZ, -10, 4);
-        child.position.x += Math.sign(c.x || 1) * transition * 18.0;
+        child.position.x += Math.sign(c.x || 1) * transition * 24.0;
       }
     });
   });
@@ -834,6 +876,7 @@ export function AboutRoom({
   }, [balloonTexs, genericSketchBalloon, genericPaintedBalloon]);
 
   const paperPlaneGeo = useMemo(() => createPaperPlaneGeometry(), []);
+  const paperPlaneOutlineGeo = useMemo(() => createPaperPlaneOutlineGeometry(), []);
 
   // ---- ENTRANCE SEQUENCE ----
   useEffect(() => {
@@ -1036,21 +1079,19 @@ export function AboutRoom({
             side={DoubleSide}
             transparent
             opacity={0.96}
+            polygonOffset
+            polygonOffsetFactor={1}
+            polygonOffsetUnits={1}
           />
         </mesh>
-        {/* Fuselage fold line */}
-        <mesh
-          geometry={paperPlaneGeo}
-          scale={[0.55, 0.55, 0.55]}
-          position={[0, -0.002, 0]}
-        >
-          <meshBasicMaterial
-            color={colors.paperDark}
-            side={DoubleSide}
+        <lineSegments geometry={paperPlaneOutlineGeo} scale={[0.55, 0.55, 0.55]}>
+          <lineBasicMaterial
+            color="#2d2a22"
             transparent
-            opacity={0.4}
+            opacity={0.8}
+            depthWrite={false}
           />
-        </mesh>
+        </lineSegments>
       </group>
 
       {/* Scrollable World Group */}
