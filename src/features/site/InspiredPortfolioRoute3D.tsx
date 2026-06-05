@@ -2466,9 +2466,12 @@ function CorridorNavigator({
     const handleTouchMove = (event: TouchEvent) => {
       const nextX = event.touches[0]?.clientX ?? touchX;
       const nextY = event.touches[0]?.clientY ?? touchY;
-      targetZ.current -= (touchY - nextY) * 0.0375;
+      
+      // Increased touch scrolling sensitivity for better UX on mobile
+      targetZ.current -= (touchY - nextY) * 0.08;
+      
       extraTurn.current = clampCorridorTurn(
-        extraTurn.current + (touchX - nextX) * 0.0015,
+        extraTurn.current + (touchX - nextX) * 0.003,
       );
       touchX = nextX;
       touchY = nextY;

@@ -1767,3 +1767,46 @@ img {
     width: 11rem;
   }
 }
+
+@media (orientation: portrait) and (pointer: coarse) {
+  .landscape-lock-overlay {
+    display: flex !important;
+  }
+}
+
+.landscape-lock-overlay {
+  display: none;
+  position: fixed;
+  inset: 0;
+  z-index: 99999;
+  background: #faf7f0;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  text-align: center;
+  padding: 2rem;
+  font-family: 'Patrick Hand', cursive;
+}
+.landscape-lock-overlay svg {
+  width: 64px;
+  height: 64px;
+  margin-bottom: 1.5rem;
+  animation: rotatePhone 2s ease-in-out infinite;
+  color: #1a1a1a;
+}
+.landscape-lock-overlay h2 {
+  font-family: 'Cabin Sketch', cursive;
+  font-size: 2.5rem;
+  margin: 0 0 0.5rem;
+  color: #171717;
+}
+.landscape-lock-overlay p {
+  font-size: 1.2rem;
+  color: rgba(26, 26, 26, 0.8);
+  margin: 0;
+}
+@keyframes rotatePhone {
+  0% { transform: rotate(0deg); }
+  50% { transform: rotate(-90deg); }
+  100% { transform: rotate(-90deg); }
+}

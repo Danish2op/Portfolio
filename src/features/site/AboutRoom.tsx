@@ -932,7 +932,10 @@ export function AboutRoom({
       if (isLeavingRef.current) return;
       const currentY = e.touches[0]?.clientY ?? 0;
       const delta = lastTouchY - currentY;
-      scrollVelocity.current += delta * 0.0055;
+      
+      // Increased touch scrolling speed
+      scrollVelocity.current += delta * 0.015;
+      
       lastTouchY = currentY;
     };
 
