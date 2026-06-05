@@ -1926,6 +1926,19 @@ function CorridorDecorSet({ segmentStartZ }: { segmentStartZ: number }) {
   const rysunekTex = useTexture(asset('/textures/corridor/rysuneknaobraz1.webp'));
   const duckTex = useTexture(asset('/textures/entrance/pot_with_duck.webp'));
 
+  const saplingTex = useTexture(asset('/textures/corridor/kwiatekwdoniczce.webp'));
+  const treeTex = useTexture(asset('/textures/corridor/drzewkowdoniczce.webp'));
+  const tableTopTex = useTexture(asset('/textures/corridor/gorastolika.webp'));
+  const tableLegsTex = useTexture(asset('/textures/corridor/texturadrewnadonozekbiurka.webp'));
+
+  const tableLegsTexRotated = useMemo(() => {
+    const clone = tableLegsTex.clone();
+    clone.rotation = Math.PI / 2;
+    clone.center.set(0.5, 0.5);
+    clone.needsUpdate = true;
+    return clone;
+  }, [tableLegsTex]);
+
   const wallX = corridorWidth / 2 - 0.01;
   const floorY = -corridorHeight / 2;
   const ceilingY = corridorHeight / 2;
@@ -2056,13 +2069,29 @@ function CorridorDecorSet({ segmentStartZ }: { segmentStartZ: number }) {
         ].map(([lx, lz], index) => (
           <mesh key={`table-leg-${index}`} position={[lx, 0.5, lz]}>
             <boxGeometry args={[0.16, 1, 0.16]} />
-            <meshStandardMaterial color="#d8d0c1" roughness={0.85} />
+            <meshBasicMaterial color="#e0e0e0" map={tableLegsTexRotated || undefined} />
           </mesh>
         ))}
         <mesh position={[0, 1.04, 0]}>
           <boxGeometry args={[2, 0.08, 0.8]} />
-          <meshStandardMaterial color="#e8dfd0" roughness={0.7} />
+          <meshBasicMaterial attach="material-0" color="#e0e0e0" map={tableLegsTex} />
+          <meshBasicMaterial attach="material-1" color="#e0e0e0" map={tableLegsTex} />
+          <meshBasicMaterial attach="material-2" color="#e0e0e0" map={tableTopTex} />
+          <meshBasicMaterial attach="material-3" color="#e0e0e0" />
+          <meshBasicMaterial attach="material-4" color="#e0e0e0" map={tableLegsTex} />
+          <meshBasicMaterial attach="material-5" color="#e0e0e0" map={tableLegsTex} />
         </mesh>
+        <Billboard position={[0, 1.28, 0]}>
+          <Plane args={[0.3, 0.3 / 0.758]}>
+            <meshBasicMaterial
+              color="#e0e0e0"
+              map={saplingTex}
+              transparent
+              alphaTest={0.1}
+              side={2}
+            />
+          </Plane>
+        </Billboard>
         <CorridorSmallFrame
           position={[-0.4, 1.28, 0]}
           rotation={[0, -Math.PI / 4, 0]}
@@ -2071,6 +2100,19 @@ function CorridorDecorSet({ segmentStartZ }: { segmentStartZ: number }) {
           rysunekTex={rysunekTex}
         />
       </group>
+
+      {/* Big Potted Tree */}
+      <Billboard position={[-wallX + 0.8, floorY + 1.5, segmentStartZ - 58]}>
+        <Plane args={[1.8, 1.8 / 0.602]}>
+          <meshBasicMaterial
+            color="#e0e0e0"
+            map={treeTex}
+            transparent
+            alphaTest={0.1}
+            side={2}
+          />
+        </Plane>
+      </Billboard>
 
       {/* Pedestal / Box */}
       <group position={[wallX - 0.26, floorY + 0.5, segmentStartZ - 51]}>
