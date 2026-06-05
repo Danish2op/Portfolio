@@ -1664,13 +1664,267 @@ function CorridorDenTitle() {
   );
 }
 
+function CorridorPhotoFrame({
+  side,
+  x,
+  y,
+  z,
+  rotationY,
+  frameWidth,
+  frameHeight,
+  artWidth,
+  artHeight,
+  sketchFrameTex,
+  paintedFrameTex,
+  sketchArtTex,
+  paintedArtTex,
+}: {
+  side: 'left' | 'right';
+  x: number;
+  y: number;
+  z: number;
+  rotationY: number;
+  frameWidth: number;
+  frameHeight: number;
+  artWidth: number;
+  artHeight: number;
+  sketchFrameTex: Texture;
+  paintedFrameTex: Texture;
+  sketchArtTex: Texture;
+  paintedArtTex: Texture;
+}) {
+  const [isHovered, setIsHovered] = useState(false);
+  const sketchFrameRef = useRef<Mesh>(null);
+  const paintedFrameRef = useRef<Mesh>(null);
+  const sketchArtRef = useRef<Mesh>(null);
+  const paintedArtRef = useRef<Mesh>(null);
+
+  useCursorLock(isHovered);
+
+  useEffect(() => {
+    const isPainted = isHovered;
+
+    if (paintedFrameRef.current?.material && 'opacity' in paintedFrameRef.current.material) {
+      gsap.to(paintedFrameRef.current.material, {
+        duration: isPainted ? 0.8 : 0.5,
+        ease: 'power2.out',
+        opacity: isPainted ? 1 : 0,
+      });
+    }
+    if (sketchFrameRef.current?.material && 'opacity' in sketchFrameRef.current.material) {
+      gsap.to(sketchFrameRef.current.material, {
+        duration: isPainted ? 0.55 : 0.4,
+        ease: 'power2.out',
+        opacity: isPainted ? 0 : 1,
+      });
+    }
+
+    if (paintedArtRef.current?.material && 'opacity' in paintedArtRef.current.material) {
+      gsap.to(paintedArtRef.current.material, {
+        duration: isPainted ? 0.8 : 0.5,
+        ease: 'power2.out',
+        opacity: isPainted ? 1 : 0,
+      });
+    }
+    if (sketchArtRef.current?.material && 'opacity' in sketchArtRef.current.material) {
+      gsap.to(sketchArtRef.current.material, {
+        duration: isPainted ? 0.55 : 0.4,
+        ease: 'power2.out',
+        opacity: isPainted ? 0 : 1,
+      });
+    }
+  }, [isHovered]);
+
+  return (
+    <group
+      position={[x, y, z]}
+      rotation={[0, rotationY, 0]}
+      onPointerOver={(e) => {
+        e.stopPropagation();
+        setIsHovered(true);
+      }}
+      onPointerOut={(e) => {
+        e.stopPropagation();
+        setIsHovered(false);
+      }}
+    >
+      {/* Sketch Frame */}
+      <mesh ref={sketchFrameRef}>
+        <planeGeometry args={[frameWidth, frameHeight]} />
+        <meshBasicMaterial
+          color="#e0e0e0"
+          map={sketchFrameTex}
+          transparent
+          alphaTest={0.05}
+        />
+      </mesh>
+      {/* Painted Frame */}
+      <mesh ref={paintedFrameRef}>
+        <planeGeometry args={[frameWidth, frameHeight]} />
+        <meshBasicMaterial
+          color="#ffffff"
+          map={paintedFrameTex}
+          transparent
+          alphaTest={0.05}
+          opacity={0}
+        />
+      </mesh>
+
+      {/* Sketch Art */}
+      <mesh
+        ref={sketchArtRef}
+        position={[0, 0, 0.01]}
+        scale={[side === 'left' ? -1 : 1, 1, 1]}
+      >
+        <planeGeometry args={[artWidth, artHeight]} />
+        <meshBasicMaterial
+          color="#e0e0e0"
+          map={sketchArtTex}
+          transparent
+          alphaTest={0.05}
+        />
+      </mesh>
+      {/* Painted Art */}
+      <mesh
+        ref={paintedArtRef}
+        position={[0, 0, 0.02]}
+        scale={[side === 'left' ? -1 : 1, 1, 1]}
+      >
+        <planeGeometry args={[artWidth, artHeight]} />
+        <meshBasicMaterial
+          color="#ffffff"
+          map={paintedArtTex}
+          transparent
+          alphaTest={0.05}
+          opacity={0}
+        />
+      </mesh>
+    </group>
+  );
+}
+
+function CorridorSmallFrame({
+  position,
+  rotation,
+  sketchFrameTex,
+  paintedFrameTex,
+  rysunekTex,
+  flipArt = false,
+}: {
+  position: [number, number, number];
+  rotation: [number, number, number];
+  sketchFrameTex: Texture;
+  paintedFrameTex: Texture;
+  rysunekTex: Texture;
+  flipArt?: boolean;
+}) {
+  const [isHovered, setIsHovered] = useState(false);
+  const sketchFrameRef = useRef<Mesh>(null);
+  const paintedFrameRef = useRef<Mesh>(null);
+  const sketchArtRef = useRef<Mesh>(null);
+
+  useCursorLock(isHovered);
+
+  useEffect(() => {
+    const isPainted = isHovered;
+
+    if (paintedFrameRef.current?.material && 'opacity' in paintedFrameRef.current.material) {
+      gsap.to(paintedFrameRef.current.material, {
+        duration: isPainted ? 0.8 : 0.5,
+        ease: 'power2.out',
+        opacity: isPainted ? 1 : 0,
+      });
+    }
+    if (sketchFrameRef.current?.material && 'opacity' in sketchFrameRef.current.material) {
+      gsap.to(sketchFrameRef.current.material, {
+        duration: isPainted ? 0.55 : 0.4,
+        ease: 'power2.out',
+        opacity: isPainted ? 0 : 1,
+      });
+    }
+    if (sketchArtRef.current?.material && 'color' in sketchArtRef.current.material) {
+      gsap.to((sketchArtRef.current.material as any).color, {
+        duration: isPainted ? 0.8 : 0.5,
+        r: isPainted ? 0.0 : 0.54,
+        g: isPainted ? 0.0 : 0.51,
+        b: isPainted ? 0.0 : 0.46,
+      });
+    }
+  }, [isHovered]);
+
+  return (
+    <group
+      position={position}
+      rotation={rotation}
+      onPointerOver={(e) => {
+        e.stopPropagation();
+        setIsHovered(true);
+      }}
+      onPointerOut={(e) => {
+        e.stopPropagation();
+        setIsHovered(false);
+      }}
+    >
+      {/* Sketch Frame */}
+      <mesh ref={sketchFrameRef}>
+        <planeGeometry args={[0.3, 0.3 / 0.758]} />
+        <meshBasicMaterial
+          color="#e0e0e0"
+          map={sketchFrameTex}
+          transparent
+          alphaTest={0.05}
+          side={2}
+        />
+      </mesh>
+      {/* Painted Frame */}
+      <mesh ref={paintedFrameRef}>
+        <planeGeometry args={[0.3, 0.3 / 0.758]} />
+        <meshBasicMaterial
+          color="#ffffff"
+          map={paintedFrameTex}
+          transparent
+          alphaTest={0.05}
+          opacity={0}
+          side={2}
+        />
+      </mesh>
+      {/* Drawing inside frame */}
+      <mesh
+        ref={sketchArtRef}
+        position={[0, 0, 0.005]}
+        scale={[flipArt ? -1 : 1, 1, 1]}
+      >
+        <planeGeometry args={[0.18, 0.36]} />
+        <meshBasicMaterial
+          color="#8a8275"
+          map={rysunekTex}
+          transparent
+          alphaTest={0.05}
+          side={2}
+        />
+      </mesh>
+    </group>
+  );
+}
+
 function CorridorDecorSet({ segmentStartZ }: { segmentStartZ: number }) {
+
   const frameTexture = useTexture(asset('/textures/corridor/ramkanazdjecieduza.webp'));
+  const framePaintedTexture = useTexture(asset('/textures/corridor/ramkanazdjecieduza_painted.webp'));
   const smallFrameTexture = useTexture(asset('/textures/corridor/ramkanazdjeciemala.webp'));
+  const smallFramePaintedTexture = useTexture(asset('/textures/corridor/ramkanazdjeciemala_painted.webp'));
+  
   const aandolanTex = useTexture(asset('/textures/studio/Aandolan.png'));
+  const aandolanPaintedTex = useTexture(asset('/textures/studio/Aandolan_painted.jpg'));
   const illustrationTex = useTexture(asset('/textures/studio/Illustration.png'));
+  const illustrationPaintedTex = useTexture(asset('/textures/studio/Illustration_painted.jpg'));
   const tedxTex = useTexture(asset('/textures/studio/TedX.png'));
+  const tedxPaintedTex = useTexture(asset('/textures/studio/TedX_painted.jpg'));
   const naalayakTex = useTexture(asset('/textures/studio/Naalayak.png'));
+  const naalayakPaintedTex = useTexture(asset('/textures/studio/Naalayak_painted.jpg'));
+  
+  const rysunekTex = useTexture(asset('/textures/corridor/rysuneknaobraz1.webp'));
+  const duckTex = useTexture(asset('/textures/entrance/pot_with_duck.webp'));
 
   const wallX = corridorWidth / 2 - 0.01;
   const floorY = -corridorHeight / 2;
@@ -1681,6 +1935,13 @@ function CorridorDecorSet({ segmentStartZ }: { segmentStartZ: number }) {
     illustration: illustrationTex,
     tedx: tedxTex,
     naalayak: naalayakTex,
+  };
+
+  const artPaintedTextureMap = {
+    aandolan: aandolanPaintedTex,
+    illustration: illustrationPaintedTex,
+    tedx: tedxPaintedTex,
+    naalayak: naalayakPaintedTex,
   };
 
   const lightZs = useMemo(() => {
@@ -1700,7 +1961,7 @@ function CorridorDecorSet({ segmentStartZ }: { segmentStartZ: number }) {
         id: 'frame-1',
         side: 'right' as const,
         z: segmentStartZ - 10,
-        y: 0.3,
+        y: 0.0,
         isPortrait: false,
         artWidth: 1.6,
         artHeight: 0.9,
@@ -1709,8 +1970,8 @@ function CorridorDecorSet({ segmentStartZ }: { segmentStartZ: number }) {
       {
         id: 'frame-2',
         side: 'left' as const,
-        z: segmentStartZ - 25,
-        y: 0.2,
+        z: segmentStartZ - 21,
+        y: 0.0,
         isPortrait: true,
         artWidth: 0.95,
         artHeight: 1.7,
@@ -1719,8 +1980,8 @@ function CorridorDecorSet({ segmentStartZ }: { segmentStartZ: number }) {
       {
         id: 'frame-3',
         side: 'right' as const,
-        z: segmentStartZ - 40,
-        y: 0.25,
+        z: segmentStartZ - 35,
+        y: 0.0,
         isPortrait: true,
         artWidth: 0.95,
         artHeight: 1.7,
@@ -1729,8 +1990,8 @@ function CorridorDecorSet({ segmentStartZ }: { segmentStartZ: number }) {
       {
         id: 'frame-4',
         side: 'left' as const,
-        z: segmentStartZ - 55,
-        y: 0.35,
+        z: segmentStartZ - 51,
+        y: 0.0,
         isPortrait: true,
         artWidth: 0.95,
         artHeight: 1.7,
@@ -1760,45 +2021,40 @@ function CorridorDecorSet({ segmentStartZ }: { segmentStartZ: number }) {
         const rotationY = frame.side === 'left' ? Math.PI / 2 : -Math.PI / 2;
         const frameWidth = frame.isPortrait ? 1.25 : 2.5;
         const frameHeight = frame.isPortrait ? 2.5 : 2.5 / 1.785;
-        const activeFrameTexture = frame.isPortrait ? smallFrameTexture : frameTexture;
-        const activeArtTexture = artTextureMap[frame.artTextureKey];
+        const sketchFrameTex = frame.isPortrait ? smallFrameTexture : frameTexture;
+        const paintedFrameTex = frame.isPortrait ? smallFramePaintedTexture : framePaintedTexture;
+        const sketchArtTex = artTextureMap[frame.artTextureKey];
+        const paintedArtTex = artPaintedTextureMap[frame.artTextureKey];
 
         return (
-          <group
+          <CorridorPhotoFrame
             key={frame.id}
-            position={[x, frame.y, frame.z]}
-            rotation={[0, rotationY, 0]}
-          >
-            <mesh>
-              <planeGeometry args={[frameWidth, frameHeight]} />
-              <meshBasicMaterial
-                color="#e0e0e0"
-                map={activeFrameTexture}
-                transparent
-                alphaTest={0.05}
-              />
-            </mesh>
-            <mesh position={[0, 0, 0.02]} scale={[frame.side === 'left' ? -1 : 1, 1, 1]}>
-              <planeGeometry args={[frame.artWidth, frame.artHeight]} />
-              <meshBasicMaterial
-                color="#e0e0e0"
-                map={activeArtTexture}
-                transparent
-                alphaTest={0.05}
-              />
-            </mesh>
-          </group>
+            side={frame.side}
+            x={x}
+            y={frame.y}
+            z={frame.z}
+            rotationY={rotationY}
+            frameWidth={frameWidth}
+            frameHeight={frameHeight}
+            artWidth={frame.artWidth}
+            artHeight={frame.artHeight}
+            sketchFrameTex={sketchFrameTex}
+            paintedFrameTex={paintedFrameTex}
+            sketchArtTex={sketchArtTex}
+            paintedArtTex={paintedArtTex}
+          />
         );
       })}
 
+      {/* Table */}
       <group position={[-wallX + 0.42, floorY, segmentStartZ - 35]} rotation={[0, Math.PI / 2, 0]}>
         {[
           [-0.9, -0.3],
           [0.9, -0.3],
           [-0.9, 0.3],
           [0.9, 0.3],
-        ].map(([x, z], index) => (
-          <mesh key={`table-leg-${index}`} position={[x, 0.5, z]}>
+        ].map(([lx, lz], index) => (
+          <mesh key={`table-leg-${index}`} position={[lx, 0.5, lz]}>
             <boxGeometry args={[0.16, 1, 0.16]} />
             <meshStandardMaterial color="#d8d0c1" roughness={0.85} />
           </mesh>
@@ -1807,34 +2063,44 @@ function CorridorDecorSet({ segmentStartZ }: { segmentStartZ: number }) {
           <boxGeometry args={[2, 0.08, 0.8]} />
           <meshStandardMaterial color="#e8dfd0" roughness={0.7} />
         </mesh>
-        <mesh position={[0, 1.28, 0]} rotation={[0, -Math.PI / 4, 0]}>
-          <planeGeometry args={[0.3, 0.3 / 0.758]} />
-          <meshBasicMaterial
-            color="#e0e0e0"
-            map={smallFrameTexture}
-            transparent
-            alphaTest={0.05}
-            side={2}
-          />
+        <CorridorSmallFrame
+          position={[-0.4, 1.28, 0]}
+          rotation={[0, -Math.PI / 4, 0]}
+          sketchFrameTex={smallFrameTexture}
+          paintedFrameTex={smallFramePaintedTexture}
+          rysunekTex={rysunekTex}
+        />
+        {/* Tabletop plant */}
+        <mesh position={[0.4, 1.28, 0]}>
+          <planeGeometry args={[0.67, 0.4]} />
+          <meshBasicMaterial map={duckTex} transparent alphaTest={0.01} depthWrite={false} side={2} />
         </mesh>
       </group>
 
+      {/* Pedestal / Box */}
       <group position={[wallX - 0.26, floorY + 0.5, segmentStartZ - 51]}>
         <mesh>
           <boxGeometry args={[0.5, 1, 0.8]} />
           <meshStandardMaterial color="#e2d8c8" roughness={0.8} />
         </mesh>
-        <mesh position={[0, 0.7, 0.09]} rotation={[0, -Math.PI / 2 + 0.2, 0]}>
-          <planeGeometry args={[0.3, 0.3 / 0.777]} />
-          <meshBasicMaterial
-            color="#e0e0e0"
-            map={smallFrameTexture}
-            transparent
-            alphaTest={0.05}
-            side={2}
-          />
-        </mesh>
+        <CorridorSmallFrame
+          position={[0, 0.7, 0.09]}
+          rotation={[0, -Math.PI / 2 + 0.2, 0]}
+          sketchFrameTex={smallFrameTexture}
+          paintedFrameTex={smallFramePaintedTexture}
+          rysunekTex={rysunekTex}
+          flipArt={true}
+        />
       </group>
+
+      {/* Floor plant */}
+      <mesh
+        position={[wallX - 0.25, floorY + 0.55, segmentStartZ - 20]}
+        rotation={[0, -Math.PI / 2, 0]}
+      >
+        <planeGeometry args={[1.83, 1.1]} />
+        <meshBasicMaterial map={duckTex} transparent alphaTest={0.01} depthWrite={false} side={2} />
+      </mesh>
     </group>
   );
 }

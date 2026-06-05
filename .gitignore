@@ -13,3 +13,5 @@ dist/
 
 # Nested subprojects
 resume-service/
+.vercel
+scratch/
