@@ -2070,12 +2070,6 @@ function CorridorDecorSet({ segmentStartZ }: { segmentStartZ: number }) {
           paintedFrameTex={smallFramePaintedTexture}
           rysunekTex={rysunekTex}
         />
-        {/* Tabletop plant */}
-        <Billboard position={[0.4, 1.28, 0]}>
-          <Plane args={[0.67, 0.4]}>
-            <meshBasicMaterial map={duckTex} transparent alphaTest={0.01} depthWrite={false} side={2} />
-          </Plane>
-        </Billboard>
       </group>
 
       {/* Pedestal / Box */}
@@ -2093,15 +2087,6 @@ function CorridorDecorSet({ segmentStartZ }: { segmentStartZ: number }) {
           flipArt={true}
         />
       </group>
-
-      {/* Floor plant */}
-      <Billboard
-        position={[wallX - 0.6, floorY + 0.7, segmentStartZ - 20]}
-      >
-        <Plane args={[2.34, 1.4]}>
-          <meshBasicMaterial map={duckTex} transparent alphaTest={0.01} depthWrite={false} side={2} />
-        </Plane>
-      </Billboard>
     </group>
   );
 }
