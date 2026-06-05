@@ -552,19 +552,7 @@ export function MusicStudioRoom({
   const hasTriggeredExit = useRef(false);
   const isFirstFrameRef = useRef(true);
 
-  // Sound loop
-  useEffect(() => {
-    const audio = new window.Audio(asset('/sounds/szummonitorow.mp3'));
-    audio.loop = true;
-    audio.volume = 0.45;
-    audio.play().catch(() => {
-      // Autoplay blocker
-    });
 
-    return () => {
-      audio.pause();
-    };
-  }, []);
 
   useEffect(() => {
     if (triggerExit) {

@@ -1,5 +1,5 @@
 import { Canvas, useFrame, useThree } from '@react-three/fiber';
-import { Html, Text, useTexture, Billboard, Plane } from '@react-three/drei';
+import { Html, Text, useTexture, Billboard, Plane, useProgress } from '@react-three/drei';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   Euler,
@@ -330,6 +330,7 @@ function EntranceHouse({
   onAskDuck,
   onBugFixed,
   onEnterCorridor,
+  onStartEntering,
   onToggleWindowGreeting,
 }: {
   bugSquashed: boolean;
@@ -337,6 +338,7 @@ function EntranceHouse({
   onAskDuck: () => void;
   onBugFixed: () => void;
   onEnterCorridor: () => void;
+  onStartEntering?: () => void;
   onToggleWindowGreeting: (visible: boolean) => void;
 }) {
   const { camera, pointer } = useThree();
@@ -461,6 +463,7 @@ function EntranceHouse({
             duration: hovered ? 0.8 : 0.5,
             ease: 'power2.out',
             opacity: nextOpacity,
+            overwrite: true,
           });
         }
       },
@@ -474,6 +477,7 @@ function EntranceHouse({
             duration: hovered ? 0.45 : 0.35,
             ease: 'power2.out',
             opacity: baseOpacity,
+            overwrite: true,
           });
         }
       },
@@ -488,6 +492,7 @@ function EntranceHouse({
         duration: hovered ? 0.8 : 0.5,
         ease: 'power2.out',
         opacity: hovered ? 1 : 0,
+        overwrite: true,
       });
     }
     if (letterboxSketchMesh.current?.material && 'opacity' in letterboxSketchMesh.current.material) {
@@ -495,6 +500,7 @@ function EntranceHouse({
         duration: hovered ? 0.45 : 0.35,
         ease: 'power2.out',
         opacity: hovered ? 0.3 : 1,
+        overwrite: true,
       });
     }
   }, []);
@@ -506,6 +512,7 @@ function EntranceHouse({
 
     isDoorAnimating.current = true;
     animateDoorHover(false);
+    onStartEntering?.();
 
     const timeline = gsap.timeline({
       onComplete: () => {
@@ -855,25 +862,23 @@ function EntranceHouse({
           <planeGeometry args={[0.6, 0.6]} />
           <meshBasicMaterial transparent opacity={0} />
         </mesh>
-        {debugTip ? (
-          <group position={[0.9, 0.8, 0.1]} scale={debugTipVisible ? 1 : 0}>
-            <mesh>
-              <planeGeometry args={[1.8, 1.2]} />
-              <meshBasicMaterial map={speech} transparent alphaTest={0.01} depthWrite={false} />
-            </mesh>
-            <Text
-              anchorX="center"
-              anchorY="middle"
-              color="#1a1a1a"
-              fontSize={0.07}
-              maxWidth={1.4}
-              position={[0, 0.1, 0.01]}
-              textAlign="center"
-            >
-              {debugTip}
-            </Text>
-          </group>
-        ) : null}
+        <group position={[0.9, 0.8, 0.1]} scale={debugTipVisible ? 1 : 0} visible={!!debugTip}>
+          <mesh>
+            <planeGeometry args={[1.8, 1.2]} />
+            <meshBasicMaterial map={speech} transparent alphaTest={0.01} depthWrite={false} />
+          </mesh>
+          <Text
+            anchorX="center"
+            anchorY="middle"
+            color="#1a1a1a"
+            fontSize={0.07}
+            maxWidth={1.4}
+            position={[0, 0.1, 0.01]}
+            textAlign="center"
+          >
+            {debugTip || ''}
+          </Text>
+        </group>
       </group>
 
       <group
@@ -1145,6 +1150,7 @@ function CorridorDoor3D({
         duration: isPainted ? 0.8 : 0.5,
         ease: 'power2.out',
         opacity: isPainted ? 1 : 0,
+        overwrite: true,
       });
     }
 
@@ -1153,6 +1159,7 @@ function CorridorDoor3D({
         duration: isPainted ? 0.55 : 0.4,
         ease: 'power2.out',
         opacity: isPainted ? 0 : 1,
+        overwrite: true,
       });
     }
 
@@ -1164,6 +1171,7 @@ function CorridorDoor3D({
         duration: isPainted ? 0.8 : 0.5,
         ease: 'power2.out',
         opacity: isPainted ? 1 : 0,
+        overwrite: true,
       });
     }
 
@@ -1175,6 +1183,7 @@ function CorridorDoor3D({
         duration: isPainted ? 0.5 : 0.35,
         ease: 'power2.out',
         opacity: isPainted ? 0 : 1,
+        overwrite: true,
       });
     }
   }, [handleDirection, isPainted]);
@@ -1598,6 +1607,7 @@ function CorridorDenTitle() {
   const { camera } = useThree();
   const groupRef = useRef<Group>(null);
   const driftRef = useRef(0);
+  const welcomeWordRef = useRef<Mesh>(null);
   const leftWordRef = useRef<Mesh>(null);
   const rightWordRef = useRef<Mesh>(null);
 
@@ -1612,19 +1622,34 @@ function CorridorDenTitle() {
     driftRef.current = MathUtils.lerp(driftRef.current, targetOffset, 0.08);
     groupRef.current.position.x = corridorAvatarBasePosition.x + driftRef.current;
 
-    const spread = Math.abs(driftRef.current) * 0.24;
+    const cameraZ = camera.position.z;
+    const startZ = 10.5;
+    const endZ = 7.7;
+    const rawProgress = (startZ - cameraZ) / (startZ - endZ);
+    const splitProgress = Math.max(0, rawProgress);
+
+    if (welcomeWordRef.current) {
+      const targetY = 0.3 + splitProgress * 2.0;
+      welcomeWordRef.current.position.y = MathUtils.lerp(
+        welcomeWordRef.current.position.y,
+        targetY,
+        0.1,
+      );
+    }
     if (leftWordRef.current) {
+      const targetX = -1.0 - splitProgress * 2.5;
       leftWordRef.current.position.x = MathUtils.lerp(
         leftWordRef.current.position.x,
-        -1.22 - spread,
-        0.12,
+        targetX,
+        0.1,
       );
     }
     if (rightWordRef.current) {
+      const targetX = 1.0 + splitProgress * 2.5;
       rightWordRef.current.position.x = MathUtils.lerp(
         rightWordRef.current.position.x,
-        1.02 + spread,
-        0.12,
+        targetX,
+        0.1,
       );
     }
   });
@@ -1632,17 +1657,30 @@ function CorridorDenTitle() {
   return (
     <group
       ref={groupRef}
-      position={[corridorAvatarBasePosition.x, -0.08, corridorAvatarBasePosition.z - 0.3]}
+      position={[corridorAvatarBasePosition.x, 0.75, corridorAvatarBasePosition.z - 0.3]}
     >
+      <Text
+        ref={welcomeWordRef}
+        anchorX="center"
+        anchorY="middle"
+        color="#2f2b24"
+        font={corridorDoorLabelFont}
+        fontSize={0.28}
+        maxWidth={2.0}
+        position={[0, 0.3, 0]}
+        textAlign="center"
+      >
+        Welcome To
+      </Text>
       <Text
         ref={leftWordRef}
         anchorX="center"
         anchorY="middle"
         color="#2f2b24"
         font={corridorDoorLabelFont}
-        fontSize={0.34}
+        fontSize={0.36}
         maxWidth={2.3}
-        position={[-1.22, 0, 0]}
+        position={[-1.0, 0, 0]}
         textAlign="center"
       >
         Danish&apos;s
@@ -1653,9 +1691,9 @@ function CorridorDenTitle() {
         anchorY="middle"
         color="#2f2b24"
         font={corridorDoorLabelFont}
-        fontSize={0.38}
+        fontSize={0.36}
         maxWidth={1.8}
-        position={[1.02, 0, 0]}
+        position={[1.0, 0, 0]}
         textAlign="center"
       >
         Den
@@ -1709,6 +1747,7 @@ function CorridorPhotoFrame({
         duration: isPainted ? 0.8 : 0.5,
         ease: 'power2.out',
         opacity: isPainted ? 1 : 0,
+        overwrite: true,
       });
     }
     if (sketchFrameRef.current?.material && 'opacity' in sketchFrameRef.current.material) {
@@ -1716,6 +1755,7 @@ function CorridorPhotoFrame({
         duration: isPainted ? 0.55 : 0.4,
         ease: 'power2.out',
         opacity: isPainted ? 0 : 1,
+        overwrite: true,
       });
     }
 
@@ -1724,6 +1764,7 @@ function CorridorPhotoFrame({
         duration: isPainted ? 0.8 : 0.5,
         ease: 'power2.out',
         opacity: isPainted ? 1 : 0,
+        overwrite: true,
       });
     }
     if (sketchArtRef.current?.material && 'opacity' in sketchArtRef.current.material) {
@@ -1731,6 +1772,7 @@ function CorridorPhotoFrame({
         duration: isPainted ? 0.55 : 0.4,
         ease: 'power2.out',
         opacity: isPainted ? 0 : 1,
+        overwrite: true,
       });
     }
   }, [isHovered]);
@@ -1833,6 +1875,7 @@ function CorridorSmallFrame({
         duration: isPainted ? 0.8 : 0.5,
         ease: 'power2.out',
         opacity: isPainted ? 1 : 0,
+        overwrite: true,
       });
     }
     if (sketchFrameRef.current?.material && 'opacity' in sketchFrameRef.current.material) {
@@ -1840,6 +1883,7 @@ function CorridorSmallFrame({
         duration: isPainted ? 0.55 : 0.4,
         ease: 'power2.out',
         opacity: isPainted ? 0 : 1,
+        overwrite: true,
       });
     }
     if (sketchArtRef.current?.material && 'color' in sketchArtRef.current.material) {
@@ -1848,6 +1892,7 @@ function CorridorSmallFrame({
         r: isPainted ? 0.0 : 0.54,
         g: isPainted ? 0.0 : 0.51,
         b: isPainted ? 0.0 : 0.46,
+        overwrite: true,
       });
     }
   }, [isHovered]);
@@ -2102,7 +2147,7 @@ function CorridorDecorSet({ segmentStartZ }: { segmentStartZ: number }) {
       </group>
 
       {/* Big Potted Tree */}
-      <Billboard position={[-wallX + 0.8, floorY + 1.5, segmentStartZ - 58]}>
+      <Billboard position={[-wallX + 0.8, floorY + 1.5, segmentStartZ - 63]}>
         <Plane args={[1.8, 1.8 / 0.602]}>
           <meshBasicMaterial
             color="#e0e0e0"
@@ -2790,6 +2835,7 @@ function ExperienceScene({
   onAskDuck,
   onBugFixed,
   onEnterCorridor,
+  onStartEntering,
   onExplore,
   onOpenRoom,
   onRequestRoomExit,
@@ -2811,6 +2857,7 @@ function ExperienceScene({
   onAskDuck: () => void;
   onBugFixed: () => void;
   onEnterCorridor: () => void;
+  onStartEntering?: () => void;
   onExplore: () => void;
   onOpenRoom: (roomId: RoomId) => void;
   onRequestRoomExit: () => void;
@@ -2838,6 +2885,7 @@ function ExperienceScene({
           onAskDuck={onAskDuck}
           onBugFixed={onBugFixed}
           onEnterCorridor={onEnterCorridor}
+          onStartEntering={onStartEntering}
           onToggleWindowGreeting={onToggleWindowGreeting}
         />
       ) : null}
@@ -3015,6 +3063,39 @@ export function InspiredPortfolioRoute3D() {
   const [unlockedAchievements, setUnlockedAchievements] = useState<AchievementId[]>(
     loadUnlockedAchievements,
   );
+
+  const bgAudioRef = useRef<HTMLAudioElement | null>(null);
+  const [isMuted, setIsMuted] = useState(false);
+  const [hasStartedMusic, setHasStartedMusic] = useState(false);
+
+  // Preload music on mount
+  useEffect(() => {
+    const audio = new window.Audio(asset('/sounds/bg_music.mp3'));
+    audio.loop = true;
+    audio.preload = 'auto';
+    audio.volume = 0.5;
+    bgAudioRef.current = audio;
+
+    return () => {
+      audio.pause();
+    };
+  }, []);
+
+  // Sync mute state
+  useEffect(() => {
+    if (bgAudioRef.current) {
+      bgAudioRef.current.muted = isMuted;
+    }
+  }, [isMuted]);
+
+  const handleStartMusic = useCallback(() => {
+    if (bgAudioRef.current && !hasStartedMusic) {
+      bgAudioRef.current.play().catch((err) => {
+        console.warn('Audio play failed:', err);
+      });
+      setHasStartedMusic(true);
+    }
+  }, [hasStartedMusic]);
 
   const latestAchievementCopy = latestAchievement ? achievementCopy[latestAchievement] : null;
 
@@ -3199,6 +3280,7 @@ export function InspiredPortfolioRoute3D() {
 
   return (
     <main className="itom-shell itom-shell--runtime3d" data-testid="inspired-portfolio-shell">
+      <PortfolioLoader />
       <div
         aria-hidden="true"
         className="itom-shell__paper"
@@ -3223,6 +3305,7 @@ export function InspiredPortfolioRoute3D() {
               unlockAchievement('corridor_enter');
               setMode('corridor');
             }}
+            onStartEntering={handleStartMusic}
             onExplore={() => unlockAchievement('corridor_explore')}
             onOpenRoom={openRoom}
             onRequestRoomExit={requestRoomExit}
@@ -3240,26 +3323,7 @@ export function InspiredPortfolioRoute3D() {
         </Canvas>
       </div>
 
-      {mode === 'corridor' && !currentRoom ? (
-        <header className="itom-shell__topbar">
-          <div className="itom-shell__controls">
-            <button
-              type="button"
-              className="itom-button"
-              onClick={() => setIsMapOpen(true)}
-            >
-              Open route map
-            </button>
-            <button
-              type="button"
-              className="itom-button"
-              onClick={() => openRoom('music-studio')}
-            >
-              Open Music Studio
-            </button>
-          </div>
-        </header>
-      ) : null}
+
 
       {mode === 'entrance' ? (
         <aside className="runtime-note-card runtime-note-card--left">
@@ -3282,26 +3346,57 @@ export function InspiredPortfolioRoute3D() {
         )
       ) : null}
 
-      {(currentRoom === 'tech-dorm' || currentRoom === 'music-studio' || currentRoom === 'experience') && !exitingRoomId && transitionPhase === 'idle' ? (
-        <button
-          type="button"
-          className="itom-button"
-          style={{
-            position: 'fixed',
-            top: '20px',
-            right: '20px',
-            zIndex: 50,
-          }}
-          onClick={() => {
-            if (currentRoom === 'tech-dorm') {
-              setIsTechDormExiting(true);
-            } else {
-              setIsMusicStudioExiting(true);
-            }
-          }}
-        >
-          Back to corridor
-        </button>
+      {mode === 'corridor' || currentRoom ? (
+        <header className="itom-shell__topbar">
+          <div className="itom-shell__controls">
+            {hasStartedMusic ? (
+              <button
+                type="button"
+                className="itom-button"
+                onClick={() => setIsMuted((m) => !m)}
+                title={isMuted ? 'Unmute music' : 'Mute music'}
+                aria-label={isMuted ? 'Unmute music' : 'Mute music'}
+                style={{
+                  minWidth: '48px',
+                  height: '48px',
+                  padding: 0,
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                }}
+              >
+                {isMuted ? (
+                  <svg viewBox="0 0 32 32" width="28" height="28" fill="none" stroke="#1a1a1a" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M6.2 11.1 c0.2-0.1 3.5 0 3.8 0 c0.4 0 4.8-4.7 5-4.8 c0.2-0.1 0.1 4.5 0.1 7.2 c0 2.5 0 6.8 0 7 c0 0.3-4.5-4.2-4.9-4.2 c-0.4 0-3.6 0.1-3.8 0 c-0.3 0-0.2-5-0.2-5.2z" />
+                    <path d="M20.8 11.2 c1.1 1.1 4 4 4.8 4.8 M25.6 11.2 c-1.1 1.1-4 4-4.8 4.8" />
+                  </svg>
+                ) : (
+                  <svg viewBox="0 0 32 32" width="28" height="28" fill="none" stroke="#1a1a1a" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M6.2 11.1 c0.2-0.1 3.5 0 3.8 0 c0.4 0 4.8-4.7 5-4.8 c0.2-0.1 0.1 4.5 0.1 7.2 c0 2.5 0 6.8 0 7 c0 0.3-4.5-4.2-4.9-4.2 c-0.4 0-3.6 0.1-3.8 0 c-0.3 0-0.2-5-0.2-5.2z" />
+                    <path d="M18.8 10.8 c1.1 1.4 1.3 3.2 0.1 4.6" />
+                    <path d="M21.9 8.2 c2.3 2.4 2.6 5.8 0.2 8.3" />
+                  </svg>
+                )}
+              </button>
+            ) : null}
+
+            {(currentRoom === 'tech-dorm' || currentRoom === 'music-studio' || currentRoom === 'experience') && !exitingRoomId && transitionPhase === 'idle' ? (
+              <button
+                type="button"
+                className="itom-button"
+                onClick={() => {
+                  if (currentRoom === 'tech-dorm') {
+                    setIsTechDormExiting(true);
+                  } else {
+                    setIsMusicStudioExiting(true);
+                  }
+                }}
+              >
+                Back to corridor
+              </button>
+            ) : null}
+          </div>
+        </header>
       ) : null}
 
       {focusedDevice ? (
@@ -3385,5 +3480,111 @@ export function InspiredPortfolioRoute3D() {
         </div>
       ) : null}
     </main>
+  );
+}
+
+function PortfolioLoader() {
+  const { active, progress } = useProgress();
+  const [shouldRender, setShouldRender] = useState(false);
+
+  useEffect(() => {
+    if (active) {
+      setShouldRender(true);
+    } else {
+      const timeout = setTimeout(() => setShouldRender(false), 200);
+      return () => clearTimeout(timeout);
+    }
+  }, [active]);
+
+  if (!shouldRender) return null;
+
+  return (
+    <div
+      style={{
+        position: 'fixed',
+        inset: 0,
+        zIndex: 99999,
+        display: 'flex',
+        flexDirection: 'column',
+        alignItems: 'center',
+        justifyContent: 'center',
+        background: `radial-gradient(circle at 12% 12%, rgba(255, 255, 255, 0.76), transparent 18%), radial-gradient(circle at 82% 18%, rgba(255, 223, 156, 0.22), transparent 18%), #faf7f0`,
+        fontFamily: "'Cabin Sketch', 'Trebuchet MS', sans-serif",
+        color: '#1a1a1a',
+      }}
+    >
+      <div
+        style={{
+          position: 'absolute',
+          inset: 0,
+          backgroundImage: `url(${asset('/textures/paper-texture.webp')})`,
+          opacity: 0.17,
+          backgroundPosition: 'center',
+          backgroundRepeat: 'repeat',
+          backgroundSize: '380px',
+          mixBlendMode: 'multiply',
+          pointerEvents: 'none',
+        }}
+      />
+      <div
+        style={{
+          position: 'relative',
+          background: 'rgba(255, 255, 255, 0.92)',
+          border: '2px solid #1a1a1a',
+          padding: '2rem 3rem',
+          borderRadius: '4px',
+          boxShadow: '0 16px 34px rgba(26, 26, 26, 0.15)',
+          textAlign: 'center',
+          maxWidth: '90%',
+          width: '380px',
+          transform: 'rotate(-1deg)',
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
+          gap: '1.2rem',
+        }}
+      >
+        <div
+          style={{
+            position: 'absolute',
+            inset: 0,
+            backgroundImage: `url(${asset('/textures/paper-texture.webp')})`,
+            backgroundSize: 'cover',
+            opacity: 0.06,
+            zIndex: -1,
+            pointerEvents: 'none',
+          }}
+        />
+        <h1 style={{ margin: 0, fontSize: '1.8rem', letterSpacing: '-0.02em' }}>
+          Sketching the World
+        </h1>
+        <p style={{ margin: 0, fontSize: '0.95rem', color: '#555', fontFamily: 'sans-serif' }}>
+          Loading 3D textures & assets...
+        </p>
+        <div
+          style={{
+            width: '100%',
+            height: '12px',
+            border: '2px solid #1a1a1a',
+            padding: '2px',
+            background: '#fff',
+            borderRadius: '2px',
+            position: 'relative',
+          }}
+        >
+          <div
+            style={{
+              width: `${progress}%`,
+              height: '100%',
+              background: '#1a1a1a',
+              transition: 'width 0.2s ease-out',
+            }}
+          />
+        </div>
+        <span style={{ fontSize: '2.2rem', fontWeight: 'bold', lineHeight: 1 }}>
+          {Math.round(progress)}%
+        </span>
+      </div>
+    </div>
   );
 }
