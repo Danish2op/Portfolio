@@ -49,7 +49,11 @@ import {
 import { TechDormGalleryRoom } from './TechDormGalleryRoom';
 import { MusicStudioRoom } from './MusicStudioRoom';
 import { AboutRoom } from './AboutRoom';
+import { preloadAllTextures } from './preloadTextures';
 import { type MusicStudioItem, platformConfigs } from './musicStudioModel';
+
+// Preload all textures so the loading screen waits for rooms as well
+preloadAllTextures();
 
 type RoomId =
   | 'tech-dorm'
@@ -3203,7 +3207,11 @@ export function InspiredPortfolioRoute3D() {
         }
 
         setExitingRoomId(null);
-        setCurrentRoom(roomId);
+        import('react').then(({ startTransition }) => {
+          startTransition(() => {
+            setCurrentRoom(roomId);
+          });
+        });
       };
 
       if (!motionEnabled) {
@@ -3306,7 +3314,11 @@ export function InspiredPortfolioRoute3D() {
             }}
             onEnterCorridor={() => {
               unlockAchievement('corridor_enter');
-              setMode('corridor');
+              import('react').then(({ startTransition }) => {
+                startTransition(() => {
+                  setMode('corridor');
+                });
+              });
             }}
             onStartEntering={handleStartMusic}
             onExplore={() => unlockAchievement('corridor_explore')}
