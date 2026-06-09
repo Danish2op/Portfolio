@@ -1,5 +1,5 @@
 import { Canvas, useFrame, useThree } from '@react-three/fiber';
-import { Html, Text, useTexture, Billboard, Plane, useProgress } from '@react-three/drei';
+import { Html, Text, useTexture, Billboard, Plane, useProgress, Line } from '@react-three/drei';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   Euler,
@@ -21,6 +21,7 @@ import {
   clampCorridorTurn,
   corridorDoorApproachRunZ,
   corridorDoorBayWidth,
+  corridorSegmentAnchorZ,
   corridorSegmentLength,
   getCorridorDoorBaseYaw,
   getCorridorGlanceBias,
@@ -401,6 +402,19 @@ function EntranceHouse({
   const [debugTipVisible, setDebugTipVisible] = useState(false);
   const [showBugFixedLabel, setShowBugFixedLabel] = useState(false);
   const [isLetterboxHovered, setIsLetterboxHovered] = useState(false);
+  const letterboxArrowPoints = useMemo(
+    () =>
+      Array.from({ length: 16 }, (_, index) => {
+        const t = index / 15;
+        const curve = 1 - t;
+        return [
+          curve * curve * 0.17 + 2 * curve * t * 0.19 + t * t * 0.12,
+          curve * curve * 0.4 + 2 * curve * t * 0.31 + t * t * 0.23,
+          0.022,
+        ] as [number, number, number];
+      }),
+    [],
+  );
 
   useCursorLock(
     isDoorHovered.current ||
@@ -886,7 +900,7 @@ function EntranceHouse({
       </group>
 
       <group
-        position={[1.15, -0.4, 0.18]}
+        position={[1.32, -0.4, 0.18]}
         onPointerEnter={() => animateLetterboxHover(true)}
         onPointerLeave={() => animateLetterboxHover(false)}
         onClick={(event) => {
@@ -894,8 +908,12 @@ function EntranceHouse({
           window.open('https://resume-service-lime.vercel.app/api/download', '_blank');
         }}
       >
+        <mesh position={[0, 0, -0.01]}>
+          <planeGeometry args={[0.9, 0.86]} />
+          <meshBasicMaterial transparent opacity={0} depthWrite={false} />
+        </mesh>
         <mesh ref={letterboxSketchMesh}>
-          <planeGeometry args={[0.55, 0.55]} />
+          <planeGeometry args={[0.72, 0.72]} />
           <meshBasicMaterial
             map={letterboxSketch}
             transparent
@@ -904,8 +922,19 @@ function EntranceHouse({
             opacity={1}
           />
         </mesh>
+        <mesh position={[0.012, -0.012, -0.001]} scale={[1.04, 1.04, 1]}>
+          <planeGeometry args={[0.72, 0.72]} />
+          <meshBasicMaterial
+            map={letterboxSketch}
+            transparent
+            alphaTest={0.01}
+            depthWrite={false}
+            color="#242424"
+            opacity={0.34}
+          />
+        </mesh>
         <mesh ref={letterboxPaintMesh} position={[0, 0, 0.001]}>
-          <planeGeometry args={[0.55, 0.55]} />
+          <planeGeometry args={[0.72, 0.72]} />
           <meshBasicMaterial
             map={letterboxPainted}
             transparent
@@ -914,18 +943,47 @@ function EntranceHouse({
             opacity={0}
           />
         </mesh>
-        {isLetterboxHovered ? (
+        <Line points={letterboxArrowPoints} color="#1a1a1a" lineWidth={1.25} />
+        <Line
+          points={[
+            [0.12, 0.23, 0.023],
+            [0.2, 0.25, 0.023],
+          ]}
+          color="#1a1a1a"
+          lineWidth={1.25}
+        />
+        <Line
+          points={[
+            [0.12, 0.23, 0.023],
+            [0.15, 0.31, 0.023],
+          ]}
+          color="#1a1a1a"
+          lineWidth={1.25}
+        />
+        <group position={[0.22, 0.46, 0.012]} rotation={[0, 0, -0.035]}>
+          <mesh>
+            <planeGeometry args={[0.58, 0.14]} />
+            <meshBasicMaterial color="#f7f3e8" transparent opacity={0.9} depthWrite={false} />
+          </mesh>
+          <mesh position={[0, 0.072, 0.001]}>
+            <planeGeometry args={[0.59, 0.012]} />
+            <meshBasicMaterial color="#1a1a1a" transparent opacity={0.42} depthWrite={false} />
+          </mesh>
+          <mesh position={[0, -0.072, 0.001]}>
+            <planeGeometry args={[0.56, 0.012]} />
+            <meshBasicMaterial color="#1a1a1a" transparent opacity={0.34} depthWrite={false} />
+          </mesh>
           <Text
-            position={[0, 0.35, 0.01]}
-            font="/fonts/CabinSketch-Bold.ttf"
-            fontSize={0.08}
-            color="#2f2b24"
+            position={[0, -0.002, 0.01]}
+            font={corridorDoorLabelFont}
+            fontSize={0.075}
+            color="#1a1a1a"
             anchorX="center"
             anchorY="middle"
           >
-            My Resume
+            RESUME
           </Text>
-        ) : null}
+        </group>
       </group>
 
       {!bugSquashed ? (
@@ -1706,6 +1764,78 @@ function CorridorDenTitle() {
   );
 }
 
+function CorridorWallInstruction() {
+  return (
+    <>
+      <CorridorWallNote
+        arrow="↘"
+        fontSize={0.18}
+        label={'SCROLL TO\nMOVE FORWARD'}
+        positionZ={corridorCameraStartZ - 5.8}
+      />
+      <CorridorWallNote
+        arrow="↻"
+        fontSize={0.15}
+        label={'YOU ARE IN\nINFINITE WALK\nIN THIS CORRIDOR'}
+        positionZ={corridorSegmentAnchorZ - corridorSegmentLength + 5.8}
+      />
+    </>
+  );
+}
+
+function CorridorWallNote({
+  arrow,
+  fontSize,
+  label,
+  positionZ,
+}: {
+  arrow: string;
+  fontSize: number;
+  label: string;
+  positionZ: number;
+}) {
+  return (
+    <group
+      position={[-corridorWidth / 2 + 0.035, 0.58, positionZ]}
+      rotation={[0, Math.PI / 2, 0]}
+    >
+      <Text
+        anchorX="center"
+        anchorY="middle"
+        color="#2f2b24"
+        font={corridorDoorLabelFont}
+        fontSize={fontSize}
+        maxWidth={1.65}
+        textAlign="center"
+      >
+        {label}
+      </Text>
+      <Text
+        anchorX="center"
+        anchorY="middle"
+        color="#2f2b24"
+        font={corridorDoorLabelFont}
+        fontSize={0.32}
+        position={[0.08, -0.48, 0.01]}
+        rotation={[0, 0, -0.1]}
+        textAlign="center"
+      >
+        {arrow}
+      </Text>
+      <Line
+        points={[
+          [-0.82, -0.25, 0.006],
+          [-0.36, -0.3, 0.006],
+          [0.08, -0.28, 0.006],
+          [0.76, -0.24, 0.006],
+        ]}
+        color="#2f2b24"
+        lineWidth={1.1}
+      />
+    </group>
+  );
+}
+
 function CorridorPhotoFrame({
   side,
   x,
@@ -2340,35 +2470,6 @@ function CorridorSegmentShell({
         </group>
       ))}
 
-      {segmentIndex === 0 ? (
-        <group>
-          <Text
-            position={[0, -1.74, 6.2]}
-            rotation={[-Math.PI / 2, 0, 0]}
-            font="/fonts/CabinSketch-Bold.ttf"
-            fontSize={0.32}
-            color="#5c5647"
-            maxWidth={5}
-            textAlign="center"
-            anchorX="center"
-            anchorY="middle"
-          >
-            SCROLL OR USE ARROWS TO WALK
-          </Text>
-          <Text
-            position={[0, -1.74, 5.3]}
-            rotation={[-Math.PI / 2, 0, 0]}
-            font="/fonts/CabinSketch-Bold.ttf"
-            fontSize={0.45}
-            color="#5c5647"
-            anchorX="center"
-            anchorY="middle"
-          >
-            ▼
-          </Text>
-        </group>
-      ) : null}
-
       <CorridorDecorSet segmentStartZ={segmentStartZ} />
     </group>
   );
@@ -2766,6 +2867,7 @@ function CorridorNavigator({
 
       <CorridorAvatar />
       <CorridorDenTitle />
+      <CorridorWallInstruction />
 
       {repeatedDoors.map((door) => (
         <CorridorDoor3D
